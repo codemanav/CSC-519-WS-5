@@ -5,7 +5,7 @@
 
 ## LEARNING GOALS
 
-In this workshop, the goal is to use Ansible in new ways using separate "plays" or "playbooks".  One focuses on security and the second and main part of this working involves using ansible to create two variants of the same configuration, and then gathering emperical data about the performance.
+In this workshop, the goal is to use Ansible in new ways using separate "plays" or "playbooks".  One focuses on security and the second and main part of this workshop involves using ansible to create two variants of the same configuration, and then gathering emperical data about each one and comparing the performance.
 
 The first configuration uses Workshop-4 as a starting point, and assumes that you have a `Node.js` app that you can launch from a playbook.
 
@@ -26,12 +26,12 @@ Check out your fork of `CSC-519-WS-5` locally so you can work with it.
 
 ## 1. Provision an Ubuntu 22.04 instance: ( WS-4 Steps 1-6 )
 
-Using [WS-4 as a guide](https://github.ncsu.edu/CSC-519/CSC-519-WS-4) to the extent that you need, repeat steps 1-6 from WS-4 (you can probably skip step 3).
+If necessary use [WS-4 Steps 1-6 as a guide](https://github.ncsu.edu/CSC-519/CSC-519-WS-4) (you can probably skip step 3) to provision a fresh Ubuntu 22.04 instance.
 
 
 ## 2. "Security First" -- Set up a secuiry-oriented Ansible playbook
 
-Create an ansible playbook file in your workshop directory called `0-security-updates.yaml`.    
+Create an ansible playbook file in your workshop directory called `0-update-security.yaml`.    
 
 Using web resources, add ansible playbook elements to your security file that checks for and applys all security patches to all managed hosts.
 This playbook should run on all managed hosts in your inventory.
@@ -56,6 +56,7 @@ This Comma Separated Value (`.csv`) file contains 10,000 random `x,y` points bet
 ### Create a `NodeJS app` to Query the database
 
 Create a `NodeJS app` that responds to `http` queries on port 80. The app should geneate a random x,y point between `(0,0)` and `(100,100)`, then search the database for the closest point, then display the closest point from the database as well as the cartesian distance from the random point to the closest point in the dataset.
+
 
 Repeat visits to the homepage of the app should show a different random point on each visit.
 
