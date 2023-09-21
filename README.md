@@ -29,7 +29,7 @@ Check out your fork of `CSC-519-WS-5` locally so you can work with it.
 If necessary use [WS-4 Steps 1-6 as a guide](https://github.ncsu.edu/CSC-519/CSC-519-WS-4) (you can probably skip step 3) to provision a fresh Ubuntu 22.04 instance.
 
 
-## 2. "Security First" -- Set up a secuiry-oriented Ansible playbook
+## 2. "Security First" -- Set up a security-oriented Ansible playbook
 
 Create an ansible playbook file in your workshop directory called `0-update-security.yaml`.    
 
