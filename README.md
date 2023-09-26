@@ -101,7 +101,9 @@ Box-and-Whiskers example:
 Save the output of this result in a `png` or commonly used image format:  `configuration-comparison-results.png` and add it to your repo, and upload it using the form.
 
 
-Due 23:59 AOE Wednesday, September 27th, Repo synched. 
+~Due 23:59 AOE Wednesday, September 27th, Repo synched.~
+
+__Due Monday, October 1st AOE, Repo synched.__
 
 Complete the questions here:
 [Google Form file upload](https://forms.gle/4yVgpbcRBoBVJeJTA)
