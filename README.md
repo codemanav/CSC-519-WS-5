@@ -103,7 +103,7 @@ Save the output of this result in a `png` or commonly used image format:  `confi
 
 ~Due 23:59 AOE Wednesday, September 27th, Repo synched.~
 
-__Due Monday, October 1st AOE, Repo synched.__
+__Due Monday, October 2nd AOE, Repo synched.__
 
 Complete the questions here:
 [Google Form file upload](https://forms.gle/4yVgpbcRBoBVJeJTA)
