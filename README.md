@@ -50,7 +50,7 @@ This playbook should install and configure these elements on a single managed ho
 
 ### Populate the datastore.
 
-Using Ansible, populate the datastore using the contents of the file `rand-x-y-data.csv`, included in the forked workshop repo.
+Using Ansible, populate the datastore using the contents of the file `rand-x-y-data.csv` (note that you can use Ansible to set up containers on the VM) included in the forked workshop repo.
 This Comma Separated Value (`.csv`) file contains 10,000 random `x,y` points between `(0,0)` and `(100,100)` and the file contains a header row.
 
 
