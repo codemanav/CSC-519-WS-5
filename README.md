@@ -71,7 +71,7 @@ Create an ansible playbook file in your workshop directory called `2-setup-confi
 This playbook should install these elements on two separate managed host:
 * (VM1) `NodeJS` / `npm`
 * (VM1) Your app.
-* (VM2) A persistent data store (like `mysql` or `redis`)
+* (VM2) A persistent data store (like `postgresql` or `mysql` or `redis` (or `sqlite` if you persist))
 
 This configuration runs mostly the same `NodeJS app` as the previous step, but now use ansible to configure the database on a separate machine.   Try to create your `NodeJS app` so that it takes the `db` connection information as a parameter.
 
