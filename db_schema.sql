@@ -1,8 +1,0 @@
-DROP TABLE IF EXISTS cartesian_coordinate;
-
-CREATE TABLE IF NOT EXISTS cartesian_coordinate (
-  x DECIMAL(25,15) NOT NULL,
-  y DECIMAL(25,15) NOT NULL,
-  PRIMARY KEY (x, y)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
