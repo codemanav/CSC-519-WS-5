@@ -1,0 +1,227 @@
+---
+- name: Setup Configuration
+  hosts: myserver
+  become: yes
+
+  vars:
+    mysql_password: "{{ mysql_password_var }}"
+    db_host: "{{ db_host }}"
+    db_user: "{{ db_user }}"
+
+  tasks:
+
+    - name: Copy SQL file to remote host
+      copy:
+        src: db_schema.sql
+        dest: /tmp/db_schema.sql
+
+    - name: Copy Data SQL file to remote host
+      copy:
+        src: load_data.sql
+        dest: /tmp/load_data.sql
+
+    - name: Copy SQL file to remote host
+      copy:
+        src: db_schema.sql
+        dest: /tmp/db_schema.sql
+
+    - name: Create Node JS Project Directory
+      file:
+        path: node_app
+        state: directory
+      tags:
+        - create_node_app_directory
+
+    - name: Copy Node.js App Files
+      copy:
+        src: node_app/
+        dest: "node_app"
+
+    - name: Copy Python Time Analyzer Script
+      copy:
+        src: python_app/
+        dest: "."
+
+    - name: Install Node JS App Dependencies
+      npm:
+        path: node_app/
+
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: Verify Nginx Installation
+      apt:
+        name: nginx
+        state: present
+
+    - name: Start nginx service
+      service:
+        name: nginx
+        enabled: true
+        state: started
+
+    - name: Configure Nginx as Reverse Proxy
+      template:
+        src: nginx-reverse-proxy.conf
+        dest: /etc/nginx/sites-available/default
+        backup: yes
+      notify: Reload Nginx
+
+    - name: Make sure that NGINX service is running
+      become: yes
+      service:
+        name: nginx
+        state: restarted
+        enabled: yes
+
+    - name: Install "n" package using npm
+      npm:
+        name: n
+        state: present
+        global: yes
+
+    - name: Get latest version on N
+      shell: "n latest"
+
+    - name: Install Node.js and npm
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - nodejs
+        - npm
+      become: yes
+
+    - name: Install mysql client for Node.js App
+      npm:
+        name: "{{ item }}"
+        global: yes
+      with_items:
+        - mysql
+      become: yes
+
+    - name: Expose port 80 with iptables
+      shell:
+        "sudo iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT"
+
+    - name: Install MySQL Server
+      apt:
+        name: mysql-server
+        state: present
+
+    - name: Install MySQL Python package
+      apt:
+        name: python3-mysqldb
+        state: present
+
+    - name: Start & Enable MySQL Server
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+
+    - name: Update MySql 'root' password for all root accounts
+      become: yes
+      mysql_user:
+        name: root
+        host: "{{ item }}"
+        password: "{{ mysql_password_var }}"
+        login_user: root
+        login_password: "{{ mysql_password_var }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        check_implicit_admin: yes
+        priv: "*.*:ALL,GRANT"
+      with_items:
+        - "{{ ansible_hostname }}"
+        - 127.0.0.1
+        - ::1
+        - localhost
+
+    - name: Create MySQL Database - 'coordinates'
+      mysql_db:
+        name: coordinates
+        state: present
+        login_user: root
+        login_password: "{{ mysql_password_var }}"
+      become: yes
+
+    - name: Create table 'cartesian_coordinate'
+      mysql_db:
+        name: coordinates
+        state: import
+        target: /tmp/db_schema.sql
+        login_user: root
+        login_password: "{{ mysql_password_var }}"
+
+    - name: Copy 'rand-x-y-data.csv' to remote host
+      copy:
+        src: rand-x-y-data.csv
+        dest: /var/lib/mysql-files/rand-x-y-data.csv
+
+    - name: Insert Data from 'rand-x-y-data.csv' into 'cartesian_coordinate' Table
+      become: yes
+      mysql_db:
+        name: coordinates
+        state: import
+        target: /tmp/load_data.sql
+        login_user: root
+        login_password: "{{ mysql_password_var }}"
+
+    - name: Start Node.js App
+      shell: >
+        DB_HOST={{ db_host }}
+        DB_USER={{ db_user }}
+        DB_PASSWORD={{ mysql_password_var }}
+        node node_app/app.js >> node_app_log.log 2>&1
+      async: 1000
+      poll: 0
+      become: yes
+
+    - name: Check for Node.js App to be up & running
+      uri:
+        url: "http://localhost:80"
+        return_content: yes
+        status_code:
+          - 200
+      register: app_health_check
+      until: app_health_check.status == 200
+      retries: 3
+      delay: 15
+      ignore_errors: yes
+
+    - name: Restart Node.js App and Nginx if Health Check Fails
+      block:
+        - name: Restarting Node JS App
+          command: "node node_app/app.js"
+          async: 1000
+          poll: 0
+      when: app_health_check.failed  # Execute this task only if the health check failed
+
+    - name: Install python3-matplotlib and python3-pandas packages
+      apt:
+        name:
+          - python3-matplotlib
+          - python3-pandas
+        state: present
+
+    - name: Copy Python Total Response Time Visualizer Script
+      copy:
+        src: total_time_visualizer.py
+        dest: "."
+
+    - name: Copy Python Response Time Visualizer Script
+      copy:
+        src: response_time_visualizer.py
+        dest: "."
+
+  handlers:
+    - name: Restart Nginx
+      systemd:
+        name: nginx
+        state: restarted
+    - name: Reload Nginx
+      systemd:
+        name: nginx
+        state: reloaded

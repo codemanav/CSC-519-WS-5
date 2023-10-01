@@ -1,0 +1,19 @@
+---
+- name: Update Security Patches
+  hosts: all # Applies to all hosts in 'hosts.yaml' Or, all nodes in the inventory file
+  become: yes
+
+  tasks:
+    - name: Update package cache on Debian-based systems
+      apt:
+        update_cache: yes
+      when: ansible_os_family == 'Debian'
+
+    - name: Upgrade all packages on Debian-based systems
+      apt:
+        upgrade: dist
+      when: ansible_os_family == 'Debian'
+
+    - name: Ensure reboot if necessary
+      reboot:
+      when: ansible_os_family == 'Debian' and ansible_facts.get('pending_reboot') | default(false) | bool
