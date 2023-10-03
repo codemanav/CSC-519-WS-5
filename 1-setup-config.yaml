@@ -37,10 +37,10 @@
 
     - name: Set MySQL bind-address
       lineinfile:
-        path: /etc/mysql/mysql.conf.d/mysqld.cnf # Specify the path to your MySQL configuration file
+        path: /etc/mysql/mysql.conf.d/mysqld.cnf 
         regexp: '^bind-address'
-        line: 'bind-address = 0.0.0.0'  # Change this line to the desired IP address or use 0.0.0.0 for all addresses
-      notify: Restart mysql  # Notify a handler to restart the MySQL service
+        line: 'bind-address = 0.0.0.0'  
+      notify: Restart mysql  
 
 
     - name: Create user
