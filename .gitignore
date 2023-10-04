@@ -1,0 +1,7 @@
+# Ignore Devcontainer directory
+.devcontainer/
+.devcontainer/devcontainer.json
+mytoken.txt
+Data/analytics.js
+Data/cocnfiguration-comparison-results.png
+Data/plotData.py

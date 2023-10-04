@@ -1,8 +1,9 @@
+FROM ubuntu:latest
 FROM python:3-alpine
 
 RUN apk add --update --no-cache ansible bash openssh
 
-WORKDIR /ws5
+WORKDIR /workspace
 
 ENTRYPOINT []
 CMD ["/bin/bash"]

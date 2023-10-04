@@ -1,0 +1,138 @@
+---
+- name: Intiating Preformance Test on API and Local calls
+  hosts: vm2
+  become: true
+  vars:
+    redis_password: "{{ lookup('env', 'DB_PASS') }}"
+    ip_val: "{{ hostvars['vm1']['ansible_host'] }}"
+  environment:
+    REDIS_PASS: "{{ lookup('env', 'DB_PASS') }}"
+  tasks:
+    - name: Set IP_HOST environment variable to ansible_host value of vm1
+      lineinfile:
+        path: /etc/environment
+        line: "IP_HOST={{ hostvars['vm1']['ansible_host'] }}"
+        create: yes
+      become: true
+
+    # Restart Redis to Apply Changes
+    - name: Restart Redis to Apply Changes
+      systemd:
+        name: redis-server
+        state: restarted
+
+
+    # Copy Python script to find x,y distance in Redis database and accept an api call
+    - name: Copy Node js script to remote machine
+      copy:
+        src: Data/analysis.py
+        dest: /var/www/db_file/analysis.py
+      
+   # Install Nginx
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+
+    # Allow Nginx through the firewall
+    - name: Allow Nginx Full profile through the firewall
+      ufw:
+        rule: allow
+        name: 'Nginx Full'
+
+    # Kill any existing process running on port 3000 to free the port
+    - name: Kill existing process running on port 3000
+      shell: |
+        lsof -t -i tcp:3000 | xargs kill -9 || true  # Ignore errors if no process is found
+      ignore_errors: yes
+      
+    - name: Find Nginx configuration files in sites-available
+      find:
+        paths: /etc/nginx/sites-available/
+        patterns: "*"
+        recurse: yes
+      register: available_configs
+
+    - name: Find Nginx configuration links in sites-enabled
+      find:
+        paths: /etc/nginx/sites-enabled/
+        recurse: yes
+        file_type: link
+      register: enabled_links
+
+    - name: Remove symbolic links in sites-enabled
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ enabled_links.files }}"
+
+    - name: Delete configuration files in sites-available
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ available_configs.files }}"
+    
+    - name: Copy Nginx configuration
+      template:
+        src: nginx.conf
+        dest: /etc/nginx/sites-available/my_app
+    
+    - name: Reload Nginx
+      systemd:
+        name: nginx
+        state: reloaded
+        
+    - name: Enable Nginx configuration
+      file:
+        src: /etc/nginx/sites-available/my_app
+        dest: /etc/nginx/sites-enabled/my_app
+        state: link
+
+    - name: Reload Nginx
+      systemd:
+        name: nginx
+        state: reloaded
+
+    - name: Ensure Redis is running
+      systemd:
+        name: redis
+        state: started
+
+    # Install specific version of Redis package for Node.js
+    - name: Install Redis package for Node.js
+      npm:
+        name: redis
+        version: '3.0.0'  # specify the version here
+        path: /var/www/db_file/  # Make sure this path points to your Node.js application root
+        state: present
+
+  # Open port 80 in the firewall using iptables
+    - name: Expose port 80 with iptables
+      shell: 
+        "sudo iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT"
+    
+    - name: Install UFW
+      apt:
+        name: ufw
+        state: present
+    
+        
+    - name: Open port 80 in UFW
+      ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+
+  # Restart nginx to apply changes
+    - name: Restart Nginx
+      systemd:
+        name: nginx
+        state: restarted
+
+    # Install pythonflask packages
+    - name: Install pythonflask packages
+      command:
+        cmd: pip3 install flask    
+
+    - name: Run Node.js program in the background
+      shell: nohup /usr/bin/python3 /var/www/db_file/analysis.py > /var/www/db_file/app.log 2>&1 &
