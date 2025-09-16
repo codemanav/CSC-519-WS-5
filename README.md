@@ -1,5 +1,4 @@
 
-
 #  INTRO TO ANSIBLE II
 
 
@@ -20,11 +19,13 @@ The first configuration uses Workshop-4 as a starting point, and assumes that yo
 
 Firstly, create a copy of `CSC-519-WS-5` by [forking it](https://en.wikipedia.org/wiki/Fork_(software_development)) to your user account.  Do not change the name.
 
-NOTE: Add the teaching staff as "admin" level collaborators (unity IDs: `mrahman` and `jwore`) under "Settings > Collaborators and Teams."
+NOTE: Add the teaching staff as "admin" level collaborators under "Settings > Collaborators and Teams."
 
 Check out your fork of `CSC-519-WS-5` locally so you can work with it.
 
 ## 1. Provision an Ubuntu 22.04 instance: ( WS-4 Steps 1-6 )
+
+Even though Ubuntu 22.04 is not the newest version of Ubuntu, this workshop has been tested with 22.04.
 
 If necessary use [WS-4 Steps 1-6 as a guide](https://github.ncsu.edu/CSC-519/CSC-519-WS-4) (you can probably skip step 3) to provision a fresh Ubuntu 22.04 instance.
 
@@ -101,10 +102,6 @@ Box-and-Whiskers example:
 Save the output of this result in a `png` or commonly used image format:  `configuration-comparison-results.png` and add it to your repo, and upload it using the form.
 
 
-~Due 23:59 AOE Wednesday, September 27th, Repo synched.~
-
-__Due 23:59 Monday, October 2nd AOE, Repo synched.__
-
 Complete the questions here:
 [Google Form file upload](https://forms.gle/4yVgpbcRBoBVJeJTA)
 
@@ -113,7 +110,7 @@ Complete the questions here:
 
 ## Evaluation
 
-This workshop is worth 4 points.
+This workshop is worth 5 points.
 
 You'll be graded on the following rubric:
 
@@ -121,7 +118,7 @@ You'll be graded on the following rubric:
 |--|--|
 | Repo properly forked and configured with teaching staff as collaborators | 0.25 |
 | Form question | 0.25 |
-| Program fulfills requirements | 3.5 |
+| Program fulfills requirements | 4.5 |
 | Form not submitted | -2.0 |
-| `ssh` keys or any tokens checked in on your repo in any format | __-4.0__ |
+| `ssh` keys or any tokens checked in on your repo in any format | __-2.0__ |
 
