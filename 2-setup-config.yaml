@@ -1,0 +1,180 @@
+---
+- name: Setup Database on VM2
+  hosts: vm2
+  become: yes
+
+  tasks:
+    # --- Install MySQL ---
+    - name: Install MySQL
+      apt:
+        name: [mysql-server, mysql-client, python3-pymysql]
+        state: present
+        update_cache: yes
+
+    - name: Start and enable MySQL
+      systemd:
+        name: mysql
+        enabled: yes
+        state: started
+
+    - name: Allow MySQL remote connections
+      lineinfile:
+        path: /etc/mysql/mysql.conf.d/mysqld.cnf
+        regexp: '^bind-address'
+        line: 'bind-address = 0.0.0.0'
+      notify: Restart mysql
+
+    - name: Create database
+      community.mysql.mysql_db:
+        name: pointsdb
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Create db user with remote access
+      community.mysql.mysql_user:
+        name: myuser
+        password: mypassword
+        priv: "pointsdb.*:ALL"
+        host: "%"
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Create table for points
+      community.mysql.mysql_query:
+        login_user: myuser
+        login_password: mypassword
+        login_db: pointsdb
+        query: "CREATE TABLE IF NOT EXISTS points (id INT AUTO_INCREMENT PRIMARY KEY, x DOUBLE, y DOUBLE);"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Clear existing rows in points table
+      community.mysql.mysql_query:
+        login_user: myuser
+        login_password: mypassword
+        login_db: pointsdb
+        query: "TRUNCATE TABLE points;"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    # --- Load CSV data ---
+    - name: Read CSV into variable
+      set_fact:
+        csv_lines: "{{ lookup('file', 'rand-x-y-data.csv').splitlines()[1:] }}"
+
+    - name: Insert points into DB in batches of 500
+      community.mysql.mysql_query:
+        login_user: myuser
+        login_password: mypassword
+        login_db: pointsdb
+        query: |
+          INSERT INTO points (x, y) VALUES
+          {% for line in item %}
+          ({{ line.split(',')[0] }}, {{ line.split(',')[1] }}){% if not loop.last %},{% endif %}
+          {% endfor %};
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      loop: "{{ csv_lines | batch(500, '') }}"
+
+    - name: Verify row count
+      community.mysql.mysql_query:
+        login_user: myuser
+        login_password: mypassword
+        login_db: pointsdb
+        query: "SELECT COUNT(*) AS cnt FROM points;"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+      register: verify_result
+
+    - name: Show verification result
+      debug:
+        msg: "Row count in VM2 DB: {{ verify_result.query_result[0][0].cnt }}"
+
+  handlers:
+    - name: Restart mysql
+      systemd:
+        name: mysql
+        state: restarted
+
+- name: Setup Node.js App on VM1
+  hosts: vm1
+  become: yes
+
+  vars:
+    node_version: "16.x"
+    app_dir: /opt/myapp
+
+  tasks:
+    # --- Install prerequisites ---
+    - name: Install required packages
+      apt:
+        name: [curl, gnupg, build-essential]
+        state: present
+        update_cache: yes
+
+    # --- Install Node.js ---
+    - name: Add Node.js repo
+      shell: curl -fsSL https://deb.nodesource.com/setup_{{ node_version }} | bash -
+      args:
+        executable: /bin/bash
+
+    - name: Install Node.js
+      apt:
+        name: nodejs
+        state: present
+
+    # --- Deploy Node.js App ---
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+
+    - name: Copy app.js
+      copy:
+        src: app.js
+        dest: "{{ app_dir }}/app.js"
+
+    - name: Initialize Node.js app
+      shell: |
+        cd {{ app_dir }}
+        npm init -y
+        npm install express mysql2
+      args:
+        chdir: "{{ app_dir }}"
+
+    # --- Setup systemd service for Node.js ---
+    - name: Create systemd service
+      copy:
+        dest: /etc/systemd/system/myapp.service
+        content: |
+          [Unit]
+          Description=Node.js App (Remote DB)
+          After=network.target
+
+          [Service]
+          ExecStart=/usr/bin/node {{ app_dir }}/app.js
+          Restart=always
+          User=root
+          Environment=PORT=80 DB_HOST={{ hostvars['vm2'].ansible_host }} DB_USER=myuser DB_PASS=mypassword DB_NAME=pointsdb
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Enable and start app service
+      systemd:
+        name: myapp
+        enabled: yes
+        state: started
+
+    # --- Firewall: keep port 80 open ---
+    - name: Install iptables-persistent (for saving firewall rules)
+      apt:
+        name: iptables-persistent
+        state: present
+        update_cache: yes
+
+    - name: Open port 80 in iptables
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 80
+        jump: ACCEPT
+
+    - name: Save iptables rules
+      command: netfilter-persistent save
