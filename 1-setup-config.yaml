@@ -14,6 +14,9 @@
         name: [curl, gnupg, build-essential]
         state: present
         update_cache: yes
+    
+    - name: Expose port 80 with iptables 
+      shell: "iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT"
 
     # --- Install Node.js + npm ---
     - name: Add Node.js repo
@@ -150,19 +153,4 @@
         enabled: yes
         state: started
     
-    # --- Firewall: keep port 80 open ---
-    - name: Install iptables-persistent (for saving firewall rules)
-      apt:
-        name: iptables-persistent
-        state: present
-        update_cache: yes
-
-    - name: Open port 80 in iptables
-      ansible.builtin.iptables:
-        chain: INPUT
-        protocol: tcp
-        destination_port: 80
-        jump: ACCEPT
-
-    - name: Save iptables rules
-      command: netfilter-persistent save
+    
